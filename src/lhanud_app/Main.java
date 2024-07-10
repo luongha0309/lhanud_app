@@ -4,6 +4,8 @@ import java.sql.Timestamp;
 import java.util.Scanner;
 import lhanud_app.model.Dao;
 import lhanud_app.object.Account;
+import lhanud_app.object.Admin;
+import lhanud_app.object.SecurityQuestion;
 import lhanud_app.object.Transaction;
 
 public class Main {
@@ -15,52 +17,49 @@ public class Main {
         Dao dao = new Dao();
         
         while(true){
-            if(isLoggedIn == false){
-                System.out.println("==========================WELCOME TO LHANUDAPP==============================");
-                System.out.println("1. Dang ky tai khoan");
-                System.out.println("2. Dang nhap");
-                System.out.println("3. Thoat");
-                System.out.print("Chon chuc nang: ");
-                int choice = sc.nextInt();
-                sc.nextLine();
-                System.out.print("\n");
-
-                switch(choice){
-                    case 1:
-                        while(true){
-                            System.out.println("==========================REGISTER==============================");
-                            boolean success = register(sc, dao);
-                            if (success) {
-                                break;
-                            } else {
-                                System.err.println("Dang ky that bai. Vui long thu lai!\n");
+            System.out.println("==========================WELCOME TO LHANUDAPP==============================");
+            System.out.println("1. Dang ky tai khoan");
+            System.out.println("2. Dang nhap");
+            System.out.println("3. Thoat");
+            System.out.print("Chon chuc nang: ");
+            int choice = sc.nextInt();
+            sc.nextLine();
+            System.out.print("\n");
+            switch(choice){
+                case 1:
+                    System.out.println("==========================REGISTER==============================");
+                    while(!register(sc, dao)){
+                    }
+                    break;
+                case 2:
+                    System.out.println("==========================LOGIN==============================");
+                    switch(login(sc, dao)){
+                        case 0:
+                            while(true){
+                                login(sc, dao);
                             }
-                        }
-                        break;
+                        case 1:
+                            while(true){
+                                break;
+                            }
+                            break;
+                        case 2:
+                            while(true){
+                                break;
+                            }
+                            break;
+                    }
+                    break;
 
-                    case 2:
-                        System.out.println("==========================LOGIN==============================");
-                        boolean success = login(sc, dao);
-                        if(success){
-                            isLoggedIn = true;  // Cập nhật trạng thái đăng nhập
-                        } else {
-                            System.err.println("Dang nhap that bai. Vui long thu lai!\n");
-                        }
-                        break;
+                case 3:
+                    System.out.println("Thoat chuong trinh thanh cong!\n");
+                    sc.close();
+                    dao.closeConnection();
+                    System.exit(0);
+                    break;
 
-                    case 3:
-                        System.out.println("Thoat chuong trinh thanh cong!\n");
-                        sc.close();
-                        dao.closeConnection();
-                        System.exit(0);
-                        break;
-
-                    default:
-                        System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
-                        break;
-                }
-            } else {
-                userMenu(sc, dao, currentAccount);
+                default:
+                    System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
             }
         }
     }
@@ -77,13 +76,33 @@ public class Main {
         
         System.out.print("Nhap mat khau: ");
         String password = sc.nextLine();
+        System.out.print("\n");
         
         if(password.isEmpty()){
             System.err.println("Mat khau khong duoc de trong!\n");
             return false;
         }
         
-        Account newAccount = new Account(0, username, password, 0.0);
+        dao.showSecuriryQuestion();
+        int chosenQuestion;
+        while(true){
+            System.out.print("\nChon cau hoi bao mat: ");
+            chosenQuestion = sc.nextInt();
+            sc.nextLine();
+            if(dao.getMaxQuestionId() == 0){
+                System.err.println("Khong lay ra duoc cau hoi bao mat!");
+                break;
+            }else if(chosenQuestion > dao.getMaxQuestionId()){
+                System.err.println("Chon cau hoi khong dung. Vui long chon lai!");
+            } else {
+                break;
+            }
+        }
+        
+        System.out.print("Nhap cau tra loi: ");
+        String answer = sc.nextLine();
+        
+        Account newAccount = new Account(0, username, password, 0.0, chosenQuestion, answer);
         if(dao.insertAccount(newAccount)){
             System.out.println("Dang ky thanh cong tai khoan ID: " + dao.getAccountIdByUsername(username) + "\n");
             return true;
@@ -93,26 +112,172 @@ public class Main {
         }
     }
     
-    private static boolean login(Scanner sc, Dao dao){
+    private static int login(Scanner sc, Dao dao){
         System.out.print("Nhap ten nguoi dung: ");
         String username = sc.nextLine();
         
         System.out.print("Nhap mat khau: ");
         String password = sc.nextLine();
         
-        Account account = dao.getAccountByUsername(username);
-        if(account != null && account.getPassword().equals(password)){
-            System.out.println("Dang nhap thanh cong!\n");
-            isLoggedIn = true;
-            currentAccount = account;
-            return true;
-        }else{
-            System.err.println("\nTen nguoi dung hoac mat khau khong dung!");
+        if(dao.checkIfAdmin(username)){
+                Admin admin = dao.getAdmin(username);
+                if(admin != null && admin.getPassword().equals(password)){
+                    System.out.println("Dang nhap thanh cong voi tu cach la Admin!\n");
+                    adminMenu(sc, dao, admin);
+                    return 1;
+                }else{
+                    System.err.println("\nTen nguoi dung hoac mat khau khong dung!");
+                    return 0;
+                }
+        } else {
+            Account account = dao.getAccountByUsername(username);
+            if(account != null && account.getPassword().equals(password)){
+                System.out.println("Dang nhap thanh cong!\n");
+                userMenu(sc, dao, account);
+                return 2;
+            }else{
+                System.err.println("\nTen nguoi dung hoac mat khau khong dung!");
+                return 0;
+            }
+        }
+    }
+    
+    
+    private static boolean updatePassword(Scanner sc, Dao dao, Account account){
+        System.out.print("Nhap mat khau hien tai: ");
+        String currentPassword = sc.nextLine();
+        if(currentPassword.equals(account.getPassword())){
+            System.out.print("\nNhap mat khau moi: ");
+            String newPassword = sc.nextLine();
+            if(newPassword.equals(currentPassword)){
+                System.err.println("Mat khau moi khong duoc trung voi mat khau hien tai!");
+                return false;
+            } else{
+                System.out.print("Nhap lai mat khau moi: ");
+                String confirmNewPassword = sc.nextLine();
+                if(!confirmNewPassword.equals(newPassword)){
+                    System.err.println("\n\nMat khau khong trung khop!\n");
+                    return false;
+                }else{
+                    if(!dao.updatePassword(account, newPassword)){
+                        System.err.println("\n\nCap nhat mat khau khong thanh cong!");
+                        return false;
+                    }else{
+                        System.out.println("\nCap nhat mat khau thanh cong!");
+                        return true;
+                    }
+                }
+            }
+        } else{
+            System.err.println("Mat khau khong dung!");
             return false;
         }
     }
+    
+    public static boolean forgotPassword(Scanner sc, Dao dao, Account account){
+        return false;
+    }
 
-    @SuppressWarnings("fallthrough")
+    private static void adminMenu(Scanner sc, Dao dao, Admin admin){
+        while(true){
+            System.out.println("==========================ADMIN PAGE==============================");
+            System.out.println("1. Quan ly tai khoan");
+            System.out.println("2. Quan ly cau hoi bao mat");
+            System.out.println("3. Thong ke giao dich");
+            System.out.println("4. Quan ly giao dich");
+            System.out.println("5. Dang xuat");
+            System.out.println("6. Thoat");
+            System.out.print("Chon chuc nang: ");
+            int menuChoice = sc.nextInt();
+            sc.nextLine();
+            System.out.print("\n");
+            switch(menuChoice){
+                case 1:
+                    break;
+                case 2:
+                    SecurityQuestion sq;
+                    while(true){
+                        System.out.println("==========================SECURITY QUESTION MANAGEMENT==============================");
+                        System.out.println("1. Xem cau hoi bao mat");
+                        System.out.println("2. Them cau hoi bao mat");
+                        System.out.println("3. Sua cau hoi bao mat");
+                        System.out.println("4. Xoa cau hoi bao mat");
+                        System.out.println("\n0. Quay lai");
+                        System.out.print("Chon chuc nang: ");
+                        int sqmChoice = sc.nextInt();
+                        sc.nextLine();
+                        switch(sqmChoice){
+                            case 0:
+                                break;
+                            case 1:
+                                System.out.println("==========================ALL SECURITY QUESTIONS==============================");
+                                dao.showSecuriryQuestion();
+                                while(true){
+                                    System.out.println("\n0. Quay lai");
+                                    System.out.print("Chon chuc nang: ");
+                                    int sqmInnerChoice1 = sc.nextInt();
+                                    sc.nextLine();
+                                    switch(sqmInnerChoice1){
+                                        case 0:
+                                            break;
+                                        default:
+                                            System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
+                                    }
+                                    break;
+                                }
+                                break;
+                            case 2:
+                                System.out.println("==========================INSERT A NEW SECURITY QUESTION==============================");
+                                while(true){
+                                    System.out.print("Nhap cau hoi bao mat can them: ");
+                                    String newSecurityQuestion = sc.nextLine();
+                                    if(dao.checkExistingQuestion(newSecurityQuestion)){
+                                        System.err.println("Cau hoi da ton tai. Vui long nhap lai\n");
+                                    } else {
+                                        sq = new SecurityQuestion(0, newSecurityQuestion);
+                                        if(!dao.insertSecurityQuestion(sq)){
+                                            System.err.println("Them cau hoi khong thanh cong!\n");
+                                        }else{
+                                            System.out.println("Them cau hoi thanh cong!\n");
+                                            break;
+                                        }
+                                    }
+                                    break;
+                                }
+                                break;
+                            case 3:
+                                System.out.println("==========================UPDATE SECURITY QUESTIONS==============================");
+                                break;
+                            case 4:
+                                System.out.println("==========================DELETE SECURITY QUESTIONS==============================");
+                                break;
+                            default:
+                                System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
+                        }
+                        break;
+                    }
+                    break;
+                case 3:
+                    break;
+                case 4:
+                    break;
+                case 5:
+                    System.out.println("==========================LOGOUT==============================");
+                    System.out.println("Dang xuat thanh cong!\n");
+                    isLoggedIn = false;
+                    currentAccount = null;
+                    return;
+                case 6:
+                    System.out.println("Thoat chuong trinh thanh cong!\n");
+                    sc.close();
+                    dao.closeConnection();
+                    System.exit(0);      
+                default:
+                    System.err.println("Lua chon khong hop le. Vui long chon lai!\n");    
+            }
+        }
+    }
+    
     private static void userMenu(Scanner sc, Dao dao, Account account) {
         String transactionType = "";
         String content = "";
@@ -137,7 +302,8 @@ public class Main {
                         System.out.println("==========================ACCOUNT INFOMATION==============================");
                         System.out.println("Thong tin tai khoan:");
                         dao.showInformation(account);
-                        System.out.println("\n9. Xem giao dich gan day");
+                        System.out.println("\n8. Doi mat khau");
+                        System.out.println("9. Xem giao dich gan day");
                         System.out.println("0. Quay lai");
                         System.out.print("Chon chuc nang: ");
                         int innerChoice1 = sc.nextInt();
@@ -145,7 +311,12 @@ public class Main {
                         System.out.print("\n");                       
                             switch(innerChoice1){
                                 case 0:
-                                    return;
+                                    break;
+                                case 8:
+                                        System.out.println("==========================UPDATE PASSWORD==============================");
+                                        while(!updatePassword(sc, dao, account)){
+                                        }
+                                        break;
                                 case 9:
                                     while(true){
                                         System.out.println("==========================RECENTLY TRANSACTION==============================");
@@ -157,16 +328,19 @@ public class Main {
                                         System.out.print("\n");
                                             switch(case9Choice){
                                             case 0:
-                                                return;
+                                                break;
                                             default:
                                                 System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
                                         }
+                                        break;
                                     }
-
+                                    break;
                                 default:
                                     System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
                             }
+                        break;
                     }
+                    break;
                 case 2:
                     while(true){
                         System.out.println("==========================DEPOSIT==============================");
@@ -194,7 +368,7 @@ public class Main {
                         while(true){
                             switch(innerChoice2){
                                 case 0:
-                                    return;
+                                    break;
                                 default:
                                     System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
                             }
@@ -227,7 +401,7 @@ public class Main {
                         while(true){
                             switch(innerChoice3){
                                 case 0:
-                                    return;
+                                    break;
                                 default:
                                     System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
                             }
@@ -280,7 +454,7 @@ public class Main {
                         while(true){
                             switch(innerChoice4){
                                 case 0:
-                                    return;
+                                    break;
                                 default:
                                     System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
                             }
@@ -294,8 +468,8 @@ public class Main {
                     return;
                 case 6:
                     System.out.println("Thoat chuong trinh thanh cong!\n");
-//                    sc.close();
-//                    dao.closeConnection();
+                    sc.close();
+                    dao.closeConnection();
                     System.exit(0);      
                 default:
                     System.err.println("Lua chon khong hop le. Vui long chon lai!\n");                    

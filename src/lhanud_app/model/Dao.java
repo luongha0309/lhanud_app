@@ -6,12 +6,14 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import lhanud_app.object.Account;
 import java.sql.SQLException;
+import lhanud_app.object.Admin;
+import lhanud_app.object.SecurityQuestion;
 import lhanud_app.object.Transaction;
 
 
 public class Dao {
     Connection con = MyConnection.getConnection();
-    PreparedStatement ps;
+    PreparedStatement ps, ps2;
     Statement st;
     ResultSet rs;
     
@@ -25,13 +27,47 @@ public class Dao {
         }
     }    
     
+    public boolean checkIfAdmin(String username){
+        String sql = "select admin from admin where admin = ?";
+        try{
+            ps = con.prepareStatement(sql);
+            ps.setString(1, username);
+            rs = ps.executeQuery();
+            if(!rs.next()){
+                return false;
+            } else {
+                return true;
+            }    
+        }catch(SQLException e){
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    public Admin getAdmin(String username){
+        String sql = "select * from admin where admin = ?";
+        try{
+            ps = con.prepareStatement(sql);
+            ps.setString(1, username);
+            rs = ps.executeQuery();
+            if(rs.next()){
+                return new Admin(rs.getInt("admin_id"), rs.getString("admin"), rs.getString("password"));
+            }
+        }catch(SQLException e){
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
     public boolean insertAccount(Account a){
-        String sql = "insert into account (username, password, balance) values (?,?,?)";
+        String sql = "insert into account (username, password, balance, question_id, security_answer) values (?,?,?,?,?)";
         try{
             ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, a.getUsername());
             ps.setString(2, a.getPassword());
             ps.setDouble(3, a.getBalance());
+            ps.setInt(4, a.getQuestionId());
+            ps.setString(5, a.getSecurityAnswer());
             int affectedRows = ps.executeUpdate();
             if(affectedRows > 0){
                 try(ResultSet generatedKeys = ps.getGeneratedKeys()){
@@ -47,6 +83,7 @@ public class Dao {
             return false;
         }
     }
+    
     
     public Account getAccountByUsername(String username){
         String sql = "select * from account where username = ?";
@@ -149,7 +186,7 @@ public class Dao {
                 System.err.println("So tien rut khong hop le! Vui long thu lai");
                 return false;
             }
-        } catch(Exception e) {
+        } catch(SQLException e) {
             e.printStackTrace();
             System.err.println("Rut tien that bai!");
             return false;
@@ -229,26 +266,38 @@ public class Dao {
        }
    }
    
-   public String showTransaction(int accountId){
+   public void showTransaction(int accountId){
        String sql = "select * from transaction where account_id = ? order by transaction_date desc limit 10";
        try{
            ps = con.prepareStatement(sql);
            ps.setInt(1, accountId);
            rs = ps.executeQuery();
            int i = 1;
-        while(rs.next()){
-            System.out.println("STT: " + i
-                + "| Ma giao dich: " + rs.getInt("transaction_id") 
-                + " | Loai giao dich: " + rs.getString("transaction_type") 
-                + " | So tien: " + rs.getDouble("amount") 
-                + " | Noi dung: " + rs.getString("content") 
-                + " | Ngay giao dich: " + rs.getString("transaction_date"));
-            i++;
-        }
-        return "";
+            while(rs.next()){
+                System.out.println("STT: " + i
+                    + "| Ma giao dich: " + rs.getInt("transaction_id") 
+                    + " | Loai giao dich: " + rs.getString("transaction_type") 
+                    + " | So tien: " + rs.getDouble("amount") 
+                    + " | Noi dung: " + rs.getString("content") 
+                    + " | Ngay giao dich: " + rs.getString("transaction_date"));
+                i++;
+            }
        }catch(SQLException e){
            e.printStackTrace();
-           return "";
+       }
+   }
+   
+   public void showSecuriryQuestion(){
+       String sql = "select * from security_question";
+       try{
+           ps = con.prepareStatement(sql);
+           rs = ps.executeQuery();
+           while(rs.next()){
+               System.out.println(rs.getInt("question_id") + ". " + rs.getString("question"));
+           }
+       }catch(SQLException e){
+           e.printStackTrace();
+           System.err.println("Khong the lay ra cau hoi bao mat do loi co so du lieu!");
        }
    }
    
@@ -267,4 +316,102 @@ public class Dao {
            return "Khong the in ra ten nguoi nhan!";
        }
    }
+   
+   public boolean updatePassword(Account account, String newPassword){
+       String sql = "update account set password = ? where account_id = ?";
+       try{
+           ps = con.prepareStatement(sql);
+           ps.setString(1, newPassword);
+           ps.setInt(2, account.getAccountId());
+           int rowAffected = ps.executeUpdate();
+           if(rowAffected == 0){
+               return false;
+           }
+           return true;
+       }catch(SQLException e){
+           e.printStackTrace();
+           return false;
+       }
+   }
+   
+   public String getSecutiryAnwser(String username){
+       String sql = "select security_answer from account where username = ?";
+       String securityAnswer;
+       try{
+           ps = con.prepareStatement(sql);
+           ps.setString(1, username);
+           rs = ps.executeQuery();   
+           if(rs.next()){
+               securityAnswer = rs.getString("security_answer");
+               return securityAnswer;
+           }else{
+               return "Khong ton tai cau hoi bao mat nao!";
+           }
+       }catch(SQLException e){
+           e.printStackTrace();
+           return "Khong the lay ra cau hoi bao mat!";
+       }
+   }
+   
+   public int getMaxQuestionId(){
+       String sql = "select max(question_id) as max_qid from security_question";
+       int maxQuestionId = 0;
+       try{
+           ps = con.prepareStatement(sql);
+           rs = ps.executeQuery();
+           if(rs.next()){
+               maxQuestionId = rs.getInt("max_qid");
+               return maxQuestionId;
+           }else{
+               return maxQuestionId;
+           }
+       }catch(SQLException e){
+           e.printStackTrace();
+           return maxQuestionId;
+       }
+   }
+   
+    public boolean insertSecurityQuestion(SecurityQuestion sq){
+        String sql = "insert into security_question (question_id, question) values (?, ?)";
+        String sqlGetMaxId = "select max(question_id) as max_qid from security_question";
+        try{
+            int maxQuestionId;
+            ps2 = con.prepareStatement(sqlGetMaxId);
+            rs = ps2.executeQuery();
+            if(rs.next()){
+                maxQuestionId = rs.getInt("max_qid");
+            } else{
+                maxQuestionId = 0;
+                return false;
+            }
+            ps = con.prepareStatement(sql);
+            ps.setInt(1, sq.getQuestionId() + maxQuestionId + 1);
+            ps.setString(2, sq.getQuestion());
+            int rowAffected = ps.executeUpdate();
+            if(rowAffected > 0){
+                return true;
+            }else{
+                return false;
+            }
+        }catch(SQLException e){
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    public boolean checkExistingQuestion(String question){
+        String sql = "select question from security_question where question = ?";
+        try{
+            ps = con.prepareStatement(sql);
+            ps.setString(1, question);
+            rs = ps.executeQuery();
+            if(!rs.next()){
+                return false;
+            }
+            return true;
+        }catch(SQLException e){
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

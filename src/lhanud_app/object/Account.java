@@ -6,6 +6,8 @@ public class Account {
     private String username;
     private String password;
     private double balance;
+    private int questionId;
+    private String securityAnswer;
     
     public Account(int accountID, String username, String password, double balance){
         this.accountID = accountID;
@@ -13,6 +15,15 @@ public class Account {
         this.password = password;
         this.balance = balance;
     }
+    
+    public Account(int accountID, String username, String password, double balance, int questionId, String securityAnswer){
+        this.accountID = accountID;
+        this.username = username;
+        this.password = password;
+        this.balance = balance;
+        this.questionId = questionId;
+        this.securityAnswer = securityAnswer;
+    }    
     
     public int getAccountId(){
         return accountID;
@@ -44,5 +55,29 @@ public class Account {
     
     public void setBalance(double balance){
         this.balance = balance;
+    }
+
+    public int getAccountID() {
+        return accountID;
+    }
+
+    public void setAccountID(int accountID) {
+        this.accountID = accountID;
+    }
+
+    public int getQuestionId() {
+        return questionId;
+    }
+
+    public void setQuestionId(int questionId) {
+        this.questionId = questionId;
+    }
+
+    public String getSecurityAnswer() {
+        return securityAnswer;
+    }
+
+    public void setSecurityAnswer(String securityAnswer) {
+        this.securityAnswer = securityAnswer;
     }
 }
