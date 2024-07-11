@@ -36,17 +36,30 @@ public class Main {
                     switch(login(sc, dao)){
                         case 0:
                             while(true){
-                                login(sc, dao);
-                            }
-                        case 1:
-                            while(true){
+                                System.out.println("\n9. Quen mat khau?");
+                                System.out.println("0. Quay lai");
+                                System.out.print("Chon chuc nang: ");
+                                int innerChoiceLogin = sc.nextInt();
+                                sc.nextLine();
+                                System.out.print("\n");
+                                switch(innerChoiceLogin){
+                                    case 0:
+                                        break;
+                                    case 9:
+                                        System.out.println("==========================FORGOT PASSWORD==============================");
+                                        while(!forgotPassword(sc, dao)){
+                                            break;
+                                        }
+                                        break;
+                                    default:
+                                        System.err.println("Lua chon khong hop le. Vui long chon lai!\n");    
+                                }
                                 break;
                             }
                             break;
+                        case 1:
+                            break;
                         case 2:
-                            while(true){
-                                break;
-                            }
                             break;
                     }
                     break;
@@ -89,11 +102,11 @@ public class Main {
             System.out.print("\nChon cau hoi bao mat: ");
             chosenQuestion = sc.nextInt();
             sc.nextLine();
-            if(dao.getMaxQuestionId() == 0){
+            if(dao.getMaxQuestionId() <= 0){
                 System.err.println("Khong lay ra duoc cau hoi bao mat!");
                 break;
             }else if(chosenQuestion > dao.getMaxQuestionId()){
-                System.err.println("Chon cau hoi khong dung. Vui long chon lai!");
+                System.err.println("Khong duoc chon so cau hoi lon hon " + dao.getMaxQuestionId() + ". Vui long chon lai!");
             } else {
                 break;
             }
@@ -174,7 +187,52 @@ public class Main {
         }
     }
     
-    public static boolean forgotPassword(Scanner sc, Dao dao, Account account){
+    public static boolean forgotPassword(Scanner sc, Dao dao){
+        System.out.print("Nhap tai khoan: ");
+        String forgottenAccount = sc.nextLine();
+        
+        if(!dao.checkExistingUsername(forgottenAccount)){
+            System.err.println("\nTai khoan khong ton tai!");
+            return false;
+        }
+        dao.showSecuriryQuestion();
+        int chosenQuestion;
+        while(true){
+            System.out.print("\nChon cau hoi bao mat: ");
+            chosenQuestion = sc.nextInt();
+            sc.nextLine();
+            if(dao.getMaxQuestionId() <= 0){
+                System.err.println("Khong lay ra duoc cau hoi bao mat!");
+                break;
+            }else if(chosenQuestion > dao.getMaxQuestionId()){
+                System.err.println("Khong duoc chon so cau hoi lon hon " + dao.getMaxQuestionId() + ". Vui long chon lai!");
+            } else if(dao.checkExistingQuestion(dao.getQuestionByQuestionId(chosenQuestion)) && chosenQuestion == dao.getQuestionIdByUsername(forgottenAccount)){
+                System.out.print("\nNhap cau tra loi: ");
+                String answer = sc.nextLine();
+                if(!answer.equals(dao.getSecurityAnswer(forgottenAccount))){
+                    System.err.println("Cau hoi hoac cau tra loi khong dung!");
+                } else{
+                    System.out.print("\nNhap mat khau moi: ");
+                    String newPassword = sc.nextLine();
+                    while(newPassword.equals(dao.getPasswordByUsername(forgottenAccount))){
+                        System.err.println("Ban dang nhap mat khau cu!");
+                        break;
+                    }
+                    System.out.print("\nXac nhan mat khau: ");
+                    String confirmPassword = sc.nextLine();
+                    if(!confirmPassword.equals(newPassword)){
+                        System.err.println("Mat khau xac thuc khong trung khop!");
+                    } else {
+                        System.out.println("Cap nhat mat khau thanh cong!");
+                    }
+                }
+            } else {
+                System.err.println("Cau hoi hoac cau tra loi khong dung!");
+            }
+        }
+        
+        
+        
         return false;
     }
 
@@ -210,13 +268,14 @@ public class Main {
                             case 0:
                                 break;
                             case 1:
-                                System.out.println("==========================ALL SECURITY QUESTIONS==============================");
-                                dao.showSecuriryQuestion();
                                 while(true){
+                                    System.out.println("==========================ALL SECURITY QUESTIONS==============================");
+                                    dao.showSecuriryQuestion();
                                     System.out.println("\n0. Quay lai");
                                     System.out.print("Chon chuc nang: ");
                                     int sqmInnerChoice1 = sc.nextInt();
                                     sc.nextLine();
+                                    System.out.println("\n");
                                     switch(sqmInnerChoice1){
                                         case 0:
                                             break;
@@ -313,10 +372,10 @@ public class Main {
                                 case 0:
                                     break;
                                 case 8:
-                                        System.out.println("==========================UPDATE PASSWORD==============================");
-                                        while(!updatePassword(sc, dao, account)){
+                                    System.out.println("==========================UPDATE PASSWORD==============================");
+                                    while(!updatePassword(sc, dao, account)){
                                         }
-                                        break;
+                                    break;
                                 case 9:
                                     while(true){
                                         System.out.println("==========================RECENTLY TRANSACTION==============================");
@@ -338,9 +397,7 @@ public class Main {
                                 default:
                                     System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
                             }
-                        break;
                     }
-                    break;
                 case 2:
                     while(true){
                         System.out.println("==========================DEPOSIT==============================");
