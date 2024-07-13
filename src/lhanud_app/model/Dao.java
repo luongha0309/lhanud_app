@@ -61,7 +61,7 @@ public class Dao {
         }
     }
     
-   public String getUsername(int accountId){
+   public String getUsernameByAccountId(int accountId){
        String sql = "select username from account where account_id = ?";
        try{
            ps = con.prepareStatement(sql);
@@ -94,7 +94,24 @@ public class Dao {
        }
    }
    
-    public Admin getAdmin(String username){
+   public boolean updatePasswordByUsername(String username, String newPassword){
+       String sql = "update account set password = ? where username = ?";
+       try{
+           ps = con.prepareStatement(sql);
+           ps.setString(1, newPassword);
+           ps.setString(2, username);
+           int rowAffected = ps.executeUpdate();
+           if(rowAffected == 0){
+               return false;
+           }
+           return true;
+       }catch(SQLException e){
+           e.printStackTrace();
+           return false;
+       }   
+   }
+   
+    public Admin getAdminByUsername(String username){
         String sql = "select * from admin where admin = ?";
         try{
             ps = con.prepareStatement(sql);
@@ -109,7 +126,7 @@ public class Dao {
         return null;
     }
 
-   public String getSecurityAnswer(String username){
+   public String getSecurityAnswerByUsername(String username){
        String sql = "select security_answer from account where username = ?";
        String securityAnswer;
        try{
@@ -271,6 +288,20 @@ public class Dao {
         return questionId;
     }
     
+    public boolean updateSecurityQuestion(int chosenQuestionId, String newQuestion){
+        String sql = "update security_question set question = ? where question_id = ?";
+        try{
+            ps = con.prepareStatement(sql);
+            ps.setString(1, newQuestion);
+            ps.setInt(2, chosenQuestionId);
+            int rowAffected = ps.executeUpdate();
+            return rowAffected > 0;
+        }catch(SQLException e){
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
     public boolean insertAccount(Account a){
         String sql = "insert into account (account_id, username, password, balance, question_id, security_answer) values (?,?,?,?,?,?)";
         try{
@@ -317,7 +348,7 @@ public class Dao {
             ps.setString(1, username);
             rs = ps.executeQuery();
             if(rs.next()){
-                return new Account(rs.getInt("account_id"), rs.getString("username"), rs.getString("password"), rs.getDouble("balance"));
+                return new Account(rs.getInt("account_id"), rs.getString("username"), rs.getString("password"), rs.getDouble("balance"), rs.getInt("question_id"), rs.getString("security_answer"));
             }
         }catch(Exception e){
             e.printStackTrace();
@@ -404,7 +435,7 @@ public class Dao {
        }
    }
    
-   public void showSecuriryQuestion(){
+   public void showSecurityQuestion(){
        String sql = "select * from security_question";
        try{
            ps = con.prepareStatement(sql);

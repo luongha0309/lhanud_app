@@ -48,7 +48,6 @@ public class Main {
                                     case 9:
                                         System.out.println("==========================FORGOT PASSWORD==============================");
                                         while(!forgotPassword(sc, dao)){
-                                            break;
                                         }
                                         break;
                                     default:
@@ -96,7 +95,7 @@ public class Main {
             return false;
         }
         
-        dao.showSecuriryQuestion();
+        dao.showSecurityQuestion();
         int chosenQuestion;
         while(true){
             System.out.print("\nChon cau hoi bao mat: ");
@@ -133,7 +132,7 @@ public class Main {
         String password = sc.nextLine();
         
         if(dao.checkIfAdmin(username)){
-                Admin admin = dao.getAdmin(username);
+                Admin admin = dao.getAdminByUsername(username);
                 if(admin != null && admin.getPassword().equals(password)){
                     System.out.println("Dang nhap thanh cong voi tu cach la Admin!\n");
                     adminMenu(sc, dao, admin);
@@ -187,7 +186,7 @@ public class Main {
         }
     }
     
-    public static boolean forgotPassword(Scanner sc, Dao dao){
+    private static boolean forgotPassword(Scanner sc, Dao dao){
         System.out.print("Nhap tai khoan: ");
         String forgottenAccount = sc.nextLine();
         
@@ -195,46 +194,35 @@ public class Main {
             System.err.println("\nTai khoan khong ton tai!");
             return false;
         }
-        dao.showSecuriryQuestion();
-        int chosenQuestion;
-        while(true){
-            System.out.print("\nChon cau hoi bao mat: ");
-            chosenQuestion = sc.nextInt();
-            sc.nextLine();
-            if(dao.getMaxQuestionId() <= 0){
-                System.err.println("Khong lay ra duoc cau hoi bao mat!");
-                break;
-            }else if(chosenQuestion > dao.getMaxQuestionId()){
-                System.err.println("Khong duoc chon so cau hoi lon hon " + dao.getMaxQuestionId() + ". Vui long chon lai!");
-            } else if(dao.checkExistingQuestion(dao.getQuestionByQuestionId(chosenQuestion)) && chosenQuestion == dao.getQuestionIdByUsername(forgottenAccount)){
-                System.out.print("\nNhap cau tra loi: ");
-                String answer = sc.nextLine();
-                if(!answer.equals(dao.getSecurityAnswer(forgottenAccount))){
-                    System.err.println("Cau hoi hoac cau tra loi khong dung!");
-                } else{
-                    System.out.print("\nNhap mat khau moi: ");
-                    String newPassword = sc.nextLine();
-                    while(newPassword.equals(dao.getPasswordByUsername(forgottenAccount))){
-                        System.err.println("Ban dang nhap mat khau cu!");
-                        break;
-                    }
-                    System.out.print("\nXac nhan mat khau: ");
-                    String confirmPassword = sc.nextLine();
-                    if(!confirmPassword.equals(newPassword)){
-                        System.err.println("Mat khau xac thuc khong trung khop!");
-                    } else {
-                        System.out.println("Cap nhat mat khau thanh cong!");
-                    }
-                }
+        Account theForgottenAccount = dao.getAccountByUsername(forgottenAccount);
+        String theQuestion = dao.getQuestionByQuestionId(theForgottenAccount.getQuestionId());
+        System.out.println("Cau hoi bao mat: " + theQuestion);
+            System.out.print("Nhap cau tra loi: ");
+            String answer = sc.nextLine();
+            System.out.print("\n");
+            if(!answer.equals(dao.getSecurityAnswerByUsername(forgottenAccount))){
+                System.err.println("Cau tra loi khong dung!");
+                return false;
             } else {
-                System.err.println("Cau hoi hoac cau tra loi khong dung!");
+                System.out.println("Cau tra loi dung!");
+                System.out.print("\nNhap mat khau moi: ");
+                String newPassword = sc.nextLine();
+                while(newPassword.equals(dao.getPasswordByUsername(forgottenAccount))){
+                    System.err.println("Ban dang nhap mat khau cu!");
+                    return false;
+                }
+                System.out.print("\nXac nhan mat khau: ");
+                String confirmPassword = sc.nextLine();
+                if(!confirmPassword.equals(newPassword)){
+                    System.err.println("Mat khau xac thuc khong trung khop!");
+                    return false;
+                } else {
+                    dao.updatePasswordByUsername(forgottenAccount, newPassword);
+                    System.out.println("\nCap nhat mat khau thanh cong!\n");
+                    return true;
+                }
             }
-        }
-        
-        
-        
-        return false;
-    }
+}
 
     private static void adminMenu(Scanner sc, Dao dao, Admin admin){
         while(true){
@@ -270,7 +258,7 @@ public class Main {
                             case 1:
                                 while(true){
                                     System.out.println("==========================ALL SECURITY QUESTIONS==============================");
-                                    dao.showSecuriryQuestion();
+                                    dao.showSecurityQuestion();
                                     System.out.println("\n0. Quay lai");
                                     System.out.print("Chon chuc nang: ");
                                     int sqmInnerChoice1 = sc.nextInt();
@@ -306,6 +294,29 @@ public class Main {
                                 break;
                             case 3:
                                 System.out.println("==========================UPDATE SECURITY QUESTIONS==============================");
+                                dao.showSecurityQuestion();
+                                while(true){
+                                    System.out.print("Chon cau hoi can sua: ");
+                                    int chosenQuestion = sc.nextInt();
+                                    sc.nextLine();
+                                    if(dao.getMaxQuestionId() <= 0){
+                                        System.err.println("Khong lay ra duoc cau hoi bao mat!");
+                                    }else if(chosenQuestion > dao.getMaxQuestionId()){
+                                        System.err.println("Khong duoc chon so cau hoi lon hon " + dao.getMaxQuestionId() + ". Vui long chon lai!");
+                                    } else {
+                                        System.out.print("Nhap cau hoi moi: ");
+                                        String newQuestion = sc.nextLine();
+                                        if(newQuestion.equals(dao.getQuestionByQuestionId(chosenQuestion))){
+                                            System.err.println("Cau hoi moi khong duoc giong voi cau hoi cu!");
+                                        } else if(!dao.updateSecurityQuestion(chosenQuestion, newQuestion)){
+                                            
+                                            System.err.println("Cap nhat cau hoi that bai!");
+                                        } else {
+                                            System.out.println("Cap nhat cau hoi thanh cong!\n");
+                                            break;
+                                        }
+                                    }    
+                                }
                                 break;
                             case 4:
                                 System.out.println("==========================DELETE SECURITY QUESTIONS==============================");
@@ -357,47 +368,49 @@ public class Main {
             
             switch(choice){
                 case 1:
+                    System.out.println("==========================ACCOUNT INFOMATION==============================");
+                    System.out.println("Thong tin tai khoan:");
+                    dao.showInformation(account);                    
                     while(true){
-                        System.out.println("==========================ACCOUNT INFOMATION==============================");
-                        System.out.println("Thong tin tai khoan:");
-                        dao.showInformation(account);
                         System.out.println("\n8. Doi mat khau");
                         System.out.println("9. Xem giao dich gan day");
                         System.out.println("0. Quay lai");
                         System.out.print("Chon chuc nang: ");
                         int innerChoice1 = sc.nextInt();
                         sc.nextLine();
-                        System.out.print("\n");                       
-                            switch(innerChoice1){
-                                case 0:
-                                    break;
-                                case 8:
-                                    System.out.println("==========================UPDATE PASSWORD==============================");
-                                    while(!updatePassword(sc, dao, account)){
-                                        }
-                                    break;
-                                case 9:
-                                    while(true){
-                                        System.out.println("==========================RECENTLY TRANSACTION==============================");
-                                        dao.showTransaction(account.getAccountId());
-                                        System.out.println("\n\n0. Quay lai");
-                                        System.out.print("Chon chuc nang: ");                                
-                                        int case9Choice = sc.nextInt();
-                                        sc.nextLine();
-                                        System.out.print("\n");
-                                            switch(case9Choice){
-                                            case 0:
-                                                break;
-                                            default:
-                                                System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
-                                        }
-                                        break;
+                        System.out.print("\n");
+                        switch(innerChoice1){
+                            case 0:
+                                break;
+                            case 8:
+                                System.out.println("==========================UPDATE PASSWORD==============================");
+                                while(!updatePassword(sc, dao, account)){
+                                }
+                                break;
+                            case 9:
+                                System.out.println("==========================RECENTLY TRANSACTION==============================");
+                                dao.showTransaction(account.getAccountId());
+                                while(true){
+                                    System.out.println("\n\n0. Quay lai");
+                                    System.out.print("Chon chuc nang: ");                                
+                                    int case9Choice = sc.nextInt();
+                                    sc.nextLine();
+                                    System.out.print("\n");
+                                    switch(case9Choice){
+                                        case 0:
+                                            break;
+                                        default:
+                                            System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
                                     }
                                     break;
-                                default:
-                                    System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
+                                }
+                                break;
+                            default:
+                                System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
                             }
+                            break;
                     }
+                    break;
                 case 2:
                     while(true){
                         System.out.println("==========================DEPOSIT==============================");
@@ -415,7 +428,7 @@ public class Main {
                             content = "Nap tien that bai";
                             transaction = new Transaction(0,account.getAccountId(),transactionType,depositAmount,content,timestamp);
                             dao.insertTransaction(transaction);
-                            System.err.println("Nap tien that bai! \n");
+                            System.err.println("Nap tien that bai!\n");
                         }
                         System.out.println("0. Quay lai");
                         System.out.print("Chon chuc nang: ");                    
@@ -429,8 +442,11 @@ public class Main {
                                 default:
                                     System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
                             }
+                            break;
                         }
+                        break;
                     }
+                    break;
                 case 3:
                     while(true){
                         System.out.println("==========================WITHDRAW==============================");
@@ -462,14 +478,17 @@ public class Main {
                                 default:
                                     System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
                             }
+                            break;
                         }
+                        break;
                     }
+                    break;
                 case 4:
                     while(true){
                         System.out.println("==========================TRANSFER==============================");
                         System.out.print("Nhap tai khoan nhan tien: ");
                         String toUsername = sc.nextLine();
-                        if(toUsername.equals(dao.getUsername(account.getAccountId()))){
+                        if(toUsername.equals(dao.getUsernameByAccountId(account.getAccountId()))){
                             System.err.println("Tai khoan khong duoc trung voi tai khoan nguoi gui!");
                             break;
                         } else if(dao.checkExistingUsername(toUsername)){
@@ -485,8 +504,8 @@ public class Main {
                         Transaction transactionRecieve;
                         transactionType = "Chuyen tien";
                         int toAccountId = dao.getAccountIdByUsername(toUsername);
-                        content = account.getUsername() + "da chuyen tien thanh cong cho " + dao.getUsername(toAccountId);
-                        String contentReciever = "Nhan tien thanh cong tu " + dao.getUsername(account.getAccountId());                    
+                        content = account.getUsername() + " da chuyen tien thanh cong cho " + dao.getUsernameByAccountId(toAccountId);
+                        String contentReciever = "Nhan tien thanh cong tu " + dao.getUsernameByAccountId(account.getAccountId());                    
                         if(toAccountId > 0 && dao.transfer(account.getAccountId(), toAccountId, transferAmount)){
                             account.setBalance(account.getBalance() - transferAmount);
                             transaction = new Transaction(0,account.getAccountId(),transactionType,transferAmount,content,timestamp);
@@ -515,8 +534,11 @@ public class Main {
                                 default:
                                     System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
                             }
+                            break;
                         }
+                        break;
                     }
+                    break;
                 case 5:
                     System.out.println("==========================LOGOUT==============================");
                     System.out.println("Dang xuat thanh cong!\n");
