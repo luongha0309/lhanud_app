@@ -57,9 +57,8 @@ public class Main {
                             }
                             break;
                         case 1:
-                            break;
                         case 2:
-                            break;
+                            
                     }
                     break;
 
@@ -145,6 +144,32 @@ public class Main {
             Account account = dao.getAccountByUsername(username);
             if(account != null && account.getPassword().equals(password)){
                 System.out.println("Dang nhap thanh cong!\n");
+                if(dao.getAccountByUsername(username).getQuestionId() == 0){
+                    System.err.println("Ban can cap nhat cau hoi bao mat do chung toi da thay doi hoac xoa cau hoi bao mat truoc do!");
+                    dao.showSecurityQuestion();
+                    int chosenQuestion;
+                    while(true){
+                        System.out.print("\nChon cau hoi bao mat: ");
+                        chosenQuestion = sc.nextInt();
+                        sc.nextLine();
+                        if(dao.getMaxQuestionId() <= 0){
+                            System.err.println("Khong lay ra duoc cau hoi bao mat!");
+                            break;
+                        }else if(chosenQuestion > dao.getMaxQuestionId()){
+                            System.err.println("Khong duoc chon so cau hoi lon hon " + dao.getMaxQuestionId() + ". Vui long chon lai!");
+                        } else {
+                            break;
+                        }
+                    }
+                    System.out.print("Nhap cau tra loi: ");
+                    String answer = sc.nextLine();
+                  
+                    if(dao.updateSecurityFromAccount(chosenQuestion, answer, username)){
+                        System.out.println("Cap nhat cau hoi bao mat thanh cong!");
+                    }else{
+                        System.out.println("Cap nhat cau hoi bao mat that bai. Vui long thu lai!");
+                    }
+                }
                 userMenu(sc, dao, account);
                 return 2;
             }else{
@@ -320,6 +345,20 @@ public class Main {
                                 break;
                             case 4:
                                 System.out.println("==========================DELETE SECURITY QUESTIONS==============================");
+                                dao.showSecurityQuestion();
+                                while(true){
+                                    System.out.print("Chon cau hoi can xoa: ");
+                                    int chosenQuestion = sc.nextInt();
+                                    sc.nextLine();
+                                    if(dao.getMaxQuestionId() <= 0){
+                                        System.err.println("Khong lay ra duoc cau hoi bao mat!");
+                                    }else if(chosenQuestion > dao.getMaxQuestionId()){
+                                        System.err.println("Khong duoc chon so cau hoi lon hon " + dao.getMaxQuestionId() + ". Vui long chon lai!");
+                                    } else if(dao.deleteSecurityQuestion(chosenQuestion)){
+                                        System.out.println("Xoa cau hoi bao mat thanh cong!");
+                                        break;
+                                    }
+                                }
                                 break;
                             default:
                                 System.err.println("Lua chon khong hop le. Vui long chon lai!\n");

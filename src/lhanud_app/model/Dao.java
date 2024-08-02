@@ -302,6 +302,54 @@ public class Dao {
         }
     }
     
+    public boolean deleteSecurityQuestion(int questionId){
+        try{
+            String sql = "update account set question_id = 0, security_answer = 'null' where question_id = ?";
+            ps = con.prepareStatement(sql);
+            ps.setInt(1, questionId);
+            ps.executeUpdate();
+
+            
+            sql = "delete from security_question where question_id = ?";
+            ps = con.prepareStatement(sql);
+            ps.setInt(1, questionId);
+            int rowAffected = ps.executeUpdate();
+            if(rowAffected == 0){
+                System.err.println("Khong co dong nao duoc xoa trong co so du lieu!");
+                return false;
+            }
+            
+            int newQuestionId = questionId + 1;
+            int maxQuestionId = getMaxQuestionId();
+            while(newQuestionId <= maxQuestionId){
+                sql = "update security_question set question_id = ? - 1 where question_id = ?";
+                ps = con.prepareStatement(sql); 
+                ps.setInt(1, newQuestionId);
+                ps.setInt(2, newQuestionId);
+                rowAffected = ps.executeUpdate();
+                if(rowAffected == 0){
+                    System.err.println("Khong cap nhat duoc tai cau hoi: " + newQuestionId + "!");
+                    return false;
+                }
+//                sql = "update account set question_id = ? - 1 where question_id = ?";
+//                ps = con.prepareStatement(sql);
+//                ps.setInt(1, newQuestionId);
+//                ps.setInt(2, newQuestionId);
+//                rowAffected = ps.executeUpdate();
+//                if(rowAffected == 0){
+//                    System.err.println("Khong cap nhat duoc tai cau hoi: " + newQuestionId + " trong cac account!");
+//                    return false;
+//                }
+                newQuestionId++;
+            }
+            return true;
+            
+        }catch(SQLException e){
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
     public boolean insertAccount(Account a){
         String sql = "insert into account (account_id, username, password, balance, question_id, security_answer) values (?,?,?,?,?,?)";
         try{
@@ -436,7 +484,7 @@ public class Dao {
    }
    
    public void showSecurityQuestion(){
-       String sql = "select * from security_question";
+       String sql = "select * from security_question where question_id > 0";
        try{
            ps = con.prepareStatement(sql);
            rs = ps.executeQuery();
@@ -448,7 +496,27 @@ public class Dao {
            System.err.println("Khong the lay ra cau hoi bao mat do loi co so du lieu!");
        }
    }    
-    
+   
+   public boolean updateSecurityFromAccount(int questionId, String securityAnswer, String username){
+       String sql = "update account set question_id = ? and security_answer = ? where username = ?";
+       try{
+           ps = con.prepareStatement(sql);
+           ps.setInt(1, questionId);
+           ps.setString(2, securityAnswer);
+           ps.setString(3, username);
+           int rowAffected = ps.executeUpdate();
+           if(rowAffected == 0){
+               System.err.println("Khong co dong nao duoc cap nhat!");
+               return false;
+           }
+           return true;
+           
+       }catch(SQLException e){
+           e.printStackTrace();
+           return true;
+       }
+   }
+   
     public boolean deposit(int accountId, double amount){
         String sqlSelect = "select balance from account where account_id = ?";
         String sqlUpdate = "update account set balance = ? where account_id = ?";
