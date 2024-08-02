@@ -113,7 +113,7 @@ public class Main {
         System.out.print("Nhap cau tra loi: ");
         String answer = sc.nextLine();
         
-        Account newAccount = new Account(0, username, password, 0.0, chosenQuestion, answer);
+        Account newAccount = new Account(0, username, password, 0.0, chosenQuestion, answer, "");
         if(dao.insertAccount(newAccount)){
             System.out.println("Dang ky thanh cong tai khoan ID: " + dao.getAccountIdByUsername(username) + "\n");
             return true;
@@ -264,9 +264,53 @@ public class Main {
             System.out.print("\n");
             switch(menuChoice){
                 case 1:
+                    while(true){
+                        System.out.println("==========================ACCOUNT MANAGEMENT==============================");
+                        System.out.println("1. Xem cac tai khoan nguoi dung");
+                        System.out.println("2. Them mot tai khoan moi");
+                        System.out.println("3. Chinh sua tai khoan nguoi dung");
+                        System.out.println("4. Khoa tai khoan nguoi dung");
+                        System.out.println("5. Xoa tai khoan nguoi dung");
+                        System.out.println("\n0. Quay lai");
+                        int amChoice = sc.nextInt();
+                        sc.nextLine();
+                        switch(amChoice){
+                            case 1:
+                                System.out.println("==========================SHOW ACCOUNTS==============================");
+                                dao.showAllAccount();
+                                while(true){
+                                    System.out.println("\n\n0. Quay lai");
+                                    System.out.print("Chon chuc nang: ");                                
+                                    int saChoice = sc.nextInt();
+                                    sc.nextLine();
+                                    System.out.print("\n");
+                                    switch(saChoice){
+                                        case 0:
+                                            break;
+                                        default:
+                                            System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
+                                    }
+                                    break;
+                                }
+                                break;
+                            case 2:
+                                break;
+                            case 3:
+                                break;
+                            case 4:
+                                break;
+                            case 5:
+                                break;
+                            case 0:
+                                break;
+                            default:
+                                System.err.println("Lua chon khong hop le. Vui long chon lai!\n");
+                        }
+                        break;
+                    }
                     break;
                 case 2:
-                    SecurityQuestion sq;
+                    SecurityQuestion sq;                  
                     while(true){
                         System.out.println("==========================SECURITY QUESTION MANAGEMENT==============================");
                         System.out.println("1. Xem cau hoi bao mat");
@@ -281,10 +325,10 @@ public class Main {
                             case 0:
                                 break;
                             case 1:
+                                System.out.println("==========================ALL SECURITY QUESTIONS==============================");
+                                dao.showSecurityQuestion();
+                                System.out.println("\n0. Quay lai");
                                 while(true){
-                                    System.out.println("==========================ALL SECURITY QUESTIONS==============================");
-                                    dao.showSecurityQuestion();
-                                    System.out.println("\n0. Quay lai");
                                     System.out.print("Chon chuc nang: ");
                                     int sqmInnerChoice1 = sc.nextInt();
                                     sc.nextLine();
@@ -388,8 +432,8 @@ public class Main {
     }
     
     private static void userMenu(Scanner sc, Dao dao, Account account) {
-        String transactionType = "";
-        String content = "";
+        String transactionType;
+        String content;
         Timestamp timestamp;
         Transaction transaction;
         while(true){

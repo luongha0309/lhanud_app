@@ -8,6 +8,7 @@ public class Account {
     private double balance;
     private int questionId;
     private String securityAnswer;
+    private String status;
     
     public Account(int accountID, String username, String password, double balance){
         this.accountID = accountID;
@@ -23,7 +24,17 @@ public class Account {
         this.balance = balance;
         this.questionId = questionId;
         this.securityAnswer = securityAnswer;
-    }    
+    }
+    
+    public Account(int accountID, String username, String password, double balance, int questionId, String securityAnswer, String status) {
+        this.accountID = accountID;
+        this.username = username;
+        this.password = password;
+        this.balance = balance;
+        this.questionId = questionId;
+        this.securityAnswer = securityAnswer;
+        this.status = status;
+    }
     
     public int getAccountId(){
         return accountID;
@@ -79,5 +90,13 @@ public class Account {
 
     public void setSecurityAnswer(String securityAnswer) {
         this.securityAnswer = securityAnswer;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

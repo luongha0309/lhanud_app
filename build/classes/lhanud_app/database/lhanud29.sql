@@ -6,6 +6,7 @@ create table account(
     password varchar(50) not null,
 	balance double default 0
 );
+alter table account add column status varchar(50);
 
 create table transaction(
 	transaction_id int primary key not null,

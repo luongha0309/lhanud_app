@@ -331,15 +331,6 @@ public class Dao {
                     System.err.println("Khong cap nhat duoc tai cau hoi: " + newQuestionId + "!");
                     return false;
                 }
-//                sql = "update account set question_id = ? - 1 where question_id = ?";
-//                ps = con.prepareStatement(sql);
-//                ps.setInt(1, newQuestionId);
-//                ps.setInt(2, newQuestionId);
-//                rowAffected = ps.executeUpdate();
-//                if(rowAffected == 0){
-//                    System.err.println("Khong cap nhat duoc tai cau hoi: " + newQuestionId + " trong cac account!");
-//                    return false;
-//                }
                 newQuestionId++;
             }
             return true;
@@ -351,7 +342,7 @@ public class Dao {
     }
     
     public boolean insertAccount(Account a){
-        String sql = "insert into account (account_id, username, password, balance, question_id, security_answer) values (?,?,?,?,?,?)";
+        String sql = "insert into account (account_id, username, password, balance, question_id, security_answer) values (?,?,?,?,?,?,?)";
         try{
             int maxAccountId = getMaxAccountId();
             ps = con.prepareStatement(sql);
@@ -361,6 +352,7 @@ public class Dao {
             ps.setDouble(4, a.getBalance());
             ps.setInt(5, a.getQuestionId());
             ps.setString(6, a.getSecurityAnswer());
+            ps.setString(7, "Active");
             int affectedRows = ps.executeUpdate();
             if(affectedRows > 0){
                 return true;
@@ -404,7 +396,7 @@ public class Dao {
         return null;
     }
     
-    public String showInformation(Account account){
+    public void showInformation(Account account){
         String sql = "select * from account where account_id = ?";
         try{
             ps = con.prepareStatement(sql);
@@ -415,11 +407,26 @@ public class Dao {
                 System.out.println("Ten dang nhap: " + rs.getString("username"));
                 System.out.println("So du: " + rs.getDouble("balance"));
             }
-            return "";
-        }catch(Exception e){
+        }catch(SQLException e){
             e.printStackTrace();
-            return "";
         }
+    }
+    
+    public void showAllAccount(){
+        String sql = "select * from account";
+        try{
+            ps = con.prepareStatement(sql);
+            rs = ps.executeQuery();
+            while(rs.next()){
+                System.out.println("Ma tai khoan: " + rs.getInt("account_id")
+                    + "| Ten tai khoan: " + rs.getString("username") 
+                    + " | So du: " + rs.getDouble("balance") 
+                    + " | Cau hoi bao mat: " + getQuestionByQuestionId(rs.getInt("question_id")) 
+                    + " | Trang thai: " + rs.getString("status"));
+            }
+        }catch(SQLException e){
+            e.printStackTrace();
+        }        
     }
     
     public int getAccountIdByUsername(String username){
