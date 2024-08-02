@@ -294,8 +294,14 @@ public class Main {
                                 }
                                 break;
                             case 2:
+                                System.out.println("==========================CREATE A NEW ACCOUNT==============================");
+                                while(!register(sc, dao)){
+                                }
                                 break;
                             case 3:
+                                System.out.println("==========================UPDATE AN ACCOUNT==============================");
+                                dao.showAllAccount();
+                                System.out.println("\n\n");                       
                                 break;
                             case 4:
                                 break;

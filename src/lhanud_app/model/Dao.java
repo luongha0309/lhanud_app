@@ -342,7 +342,7 @@ public class Dao {
     }
     
     public boolean insertAccount(Account a){
-        String sql = "insert into account (account_id, username, password, balance, question_id, security_answer) values (?,?,?,?,?,?,?)";
+        String sql = "insert into account (account_id, username, password, balance, question_id, security_answer, status) values (?,?,?,?,?,?,?)";
         try{
             int maxAccountId = getMaxAccountId();
             ps = con.prepareStatement(sql);
